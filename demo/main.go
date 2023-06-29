@@ -1,9 +1,9 @@
 package main
 
 import (
+	_ "demo/controller"
 	"github.com/gin-gonic/gin"
 	"github.com/git-abel/gin_router"
-	_ "github.com/git-abel/gin_router/demo/controller"
 	"log"
 )
 

@@ -18,12 +18,13 @@ type Route struct {
 	Method      []string        `desc:"RESTful 路由请求方式 [get post put delete ...]"`
 	HandlerFunc gin.HandlerFunc `desc:"资源名称"`
 	Path        string          `desc:"资源路径"`
+	Member      string          `desc:"通配符成员信息"`
 	Action      string          `desc:"函数名称"`
 }
 
 type Config struct {
-	OmitSuffix string `desc:"API 后缀（如果存在统一需要忽略的后缀则通过此方式忽略，如：HelloController{} 如果地址不想携带 Controller , 则将 Controller 添加此处）"`
-	ApiPath    string `desc:"放置API的目录地址，注: 需要从项目根目录开始"`
+	OmitSuffix string `yaml:"omit_suffix" desc:"API 后缀（如果存在统一需要忽略的后缀则通过此方式忽略，如：HelloController{} 如果地址不想携带 Controller , 则将 Controller 添加此处）"`
+	ApiPath    string `yaml:"api_path" desc:"放置API的目录地址，注: 需要从项目根目录开始"`
 }
 
 // Routers {
@@ -72,10 +73,6 @@ func RegisterRoute(controller any) {
 	// 不包含项目名称的路径
 	notProjectPath := strings.TrimPrefix(controllerPath, projectName+"/")
 
-	// fmt.Println("controllerName ===> ", controllerName)
-	// fmt.Println("controllerPath ===> ", controllerPath)
-	// fmt.Println("packagePath ===> ", projectName)
-
 	goFilePath := strings.Join([]string{notProjectPath, ToSnakeCase(controllerName) + ".go"}, "/")
 	// 将 MyController => my
 	controllerShortName := ToSnakeCase(strings.TrimSuffix(controllerName, ConfigInfo.OmitSuffix))
@@ -106,48 +103,68 @@ func RegisterRoute(controller any) {
 		}
 
 		// 查找带有注释的函数
-		for _, comment := range fn.Doc.List {
-			groupPattern := regexp.MustCompile(`@Group\((.+)\)`)
-			groupMatches := groupPattern.FindStringSubmatch(comment.Text)
-			// 当此字段大于 0 说明遍历到 group
-			if len(groupMatches) > 0 && fn.Name.Name == "init" {
-				// 如果不是 init() 方法上的 @Group 则忽略
-				tmpGroup = groupMatches[1]
-				continue
-			}
+		// for _, comment := range fn.Doc.List {
+		//
+		// }
 
-			routePattern := regexp.MustCompile(`@Method\((.+)\)`)
-			matches := routePattern.FindStringSubmatch(comment.Text)
-			if len(matches) < 1 {
-				continue
-			}
-
-			var methods []string
-			// 判断是否有多种请求方式，如果有多种请求方式，会根据 "，|," 来进行补充
-			if strings.Contains(matches[1], ",") || strings.Contains(matches[1], "，") {
-				routeParts := strings.Split(matches[1], ",")
-				methods = routeParts
-			} else {
-				methods = append(methods, matches[1])
-			}
-			// 获取当前注释的函数名称
-			actionName := ToSnakeCase(fn.Name.Name)
-			// 没有经过转化的原始 func 名称，方便后续进行路由注册是进行方法查找
-			action := fn.Name.Name
-
-			handlerValue := reflect.ValueOf(controller).MethodByName(action)
-			if !handlerValue.IsValid() {
-				panic(fmt.Sprintf("Action %s not found in controller", action))
-			}
-
-			tmpRoute[actionName] = Route{
-				Method:      methods,
-				HandlerFunc: createHandlerFunc(handlerValue),
-				Path:        path,
-				Action:      ToSnakeCase(action),
-			}
-
+		comment := fn.Doc.Text()
+		if len(comment) < 1 {
+			continue
 		}
+
+		groupPattern := regexp.MustCompile(`@Group\((.+)\)`)
+		groupMatches := groupPattern.FindStringSubmatch(comment)
+		// 当此字段大于 0 说明遍历到 group
+		if len(groupMatches) > 0 && fn.Name.Name == "init" {
+			// 如果不是 init() 方法上的 @Group 则忽略
+			tmpGroup = groupMatches[1]
+			continue
+		}
+
+		isMemberPattern := regexp.MustCompile(`(@Member)(\((.+)\))?`)
+		isMember := isMemberPattern.FindStringSubmatch(comment)
+		member := ""
+		if len(isMember) >= 1 {
+			if len(isMember[3]) > 0 {
+				member += isMember[3] + ""
+			} else {
+				member += ":id"
+			}
+		}
+
+		routePattern := regexp.MustCompile(`@Method\((.+)\)`)
+		matches := routePattern.FindStringSubmatch(comment)
+		if len(matches) < 1 {
+			continue
+		}
+
+		var methods []string
+		// 判断是否有多种请求方式，如果有多种请求方式，会根据 "，|," 来进行补充
+		if strings.Contains(matches[1], ",") || strings.Contains(matches[1], "，") {
+			routeParts := strings.Split(matches[1], ",")
+			methods = routeParts
+		} else {
+			methods = append(methods, matches[1])
+		}
+		// 获取当前注释的函数名称
+		actionName := ToSnakeCase(fn.Name.Name)
+		// 没有经过转化的原始 func 名称，方便后续进行路由注册是进行方法查找
+		action := fn.Name.Name
+
+		handlerValue := reflect.ValueOf(controller).MethodByName(action)
+		if !handlerValue.IsValid() {
+			panic(fmt.Sprintf("Action %s not found in controller", action))
+		}
+
+		// fmt.Println("member --> ", member)
+		tmpRoute[path+member+actionName] = Route{
+			Method:      methods,
+			HandlerFunc: createHandlerFunc(handlerValue),
+			Path:        path,
+			Member:      member,
+			Action:      actionName,
+		}
+		// fmt.Println("path + member", path+member)
 	}
 
 	for key, route := range tmpRoute {
@@ -160,8 +177,6 @@ func RegisterRoute(controller any) {
 
 		Routers[groupName][key] = route
 	}
-
-	fmt.Println("Routers ---> ", Routers)
 }
 
 func createHandlerFunc(handlerValue reflect.Value) gin.HandlerFunc {

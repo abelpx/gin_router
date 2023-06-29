@@ -11,18 +11,25 @@ func BindRoute(r *gin.Engine) {
 	for groupName, route := range Routers {
 		if len(groupName) > 0 {
 			group := r.Group(groupName)
-			for generate, method := range route {
-				switch generate {
+			for _, method := range route {
+				switch method.Action {
 				case "index":
 					group.GET(method.Path, method.HandlerFunc)
 				case "create":
 					group.POST(method.Path, method.HandlerFunc)
+				case "delete":
+					group.DELETE(method.Path+"/:id", method.HandlerFunc)
+				case "update":
+					group.PUT(method.Path+"/:id", method.HandlerFunc)
 				default:
 					methodStr := strings.Join(method.Method, "")
 
-					// FIXME 不知道这段代码是否符合 golang 的规范 emmmm ... ruby 代码块写习惯了
 					commonParameters := func() (string, gin.HandlerFunc) {
-						return method.Path + "/" + method.Action, method.HandlerFunc
+						if len(method.Member) > 0 {
+							return strings.Join([]string{method.Path, method.Action, method.Member}, "/"), method.HandlerFunc
+						} else {
+							return strings.Join([]string{method.Path, method.Action}, "/"), method.HandlerFunc
+						}
 					}
 
 					// 1. GET：用于获取资源，可以理解为读取操作

@@ -38,8 +38,8 @@ func main() {
 package controller
 
 import (
-	"github.com/git-abel/gin_router"
 	"github.com/gin-gonic/gin"
+	"github.com/git-abel/gin_router"
 )
 
 type HomeController struct {
@@ -51,7 +51,7 @@ func init() {
 }
 
 // Index
-// @Method(GET, POST)
+// @Method(GET)
 func (c *HomeController) Index(ctx *gin.Context) {
 	ctx.String(200, "Hello, world!")
 }
@@ -62,14 +62,67 @@ func (c *HomeController) Hi(ctx *gin.Context) {
 	ctx.String(200, "Hello, world!")
 }
 
+// Delete
+// @Method(Delete)
+func (c *HomeController) Delete(ctx *gin.Context) {
+	ctx.String(200, "Hello, world!")
+}
+
+// Create
+// @Method(Post)
+func (c *HomeController) Create(ctx *gin.Context) {
+	ctx.String(200, "Hello, world!")
+}
+
+// Update
+// @Method(PUT)
+func (c *HomeController) Update(ctx *gin.Context) {
+	ctx.String(200, "Hello, world!")
+}
+
+// MemberName
+// @Method(PUT)
+// @Member(:names)
+func (c *HomeController) MemberName(ctx *gin.Context) {
+	ctx.String(200, "Hello, "+ctx.Params.ByName("names"))
+}
+
+// Member
+// @Method(PUT)
+// @Member(:ids)
+func (c *HomeController) Member(ctx *gin.Context) {
+	ctx.String(200, "Hello, "+ctx.Params.ByName("ids"))
+}
+
+// MoreMember
+// @Method(PUT)
+// @Member(:ids/eeeee/:names)
+func (c *HomeController) MoreMember(ctx *gin.Context) {
+	ctx.String(200, "Hello, "+ctx.Params.ByName("ids")+"  names "+ctx.Params.ByName("names"))
+}
+
+// MoreBMember
+// @Method(PUT)
+// @Member(:ids/bbb/:names)
+func (c *HomeController) MoreBMember(ctx *gin.Context) {
+	ctx.String(200, "Hello, "+ctx.Params.ByName("ids")+"  names "+ctx.Params.ByName("names"))
+}
+
+
 ```
 
 ###### 其上输出的路由分别是：
-> get /v1/home
->
-> post /v1/home
->
-> get /v1/home/hi
+| 请求方法   | 路径                                     |
+|--------|----------------------------------------|
+| GET    | /v1/home                               |
+| DELETE | /v1/home/:id                           |
+| PUT    | /v1/home/:id                           |
+| GET    | /v1/home/hi                            |
+| PUT    | /v1/home/member_name/:names            |
+| PUT    | /v1/home/more_bmember/:ids/bbb/:names  |
+| POST   | /v1/home                               |
+| PUT    | /v1/home/member/:ids                   |
+| PUT    | /v1/home/more_member/:ids/eeeee/:names |
 
 ###### 在上面的示例代码中 init() 函数是通过调用 `gin_router.RegisterRoute` 函数，来将这个文件中的 Handler 注册进入路由，其中注解的详细解释如下：
 
@@ -77,6 +130,7 @@ func (c *HomeController) Hi(ctx *gin.Context) {
 |---------|---------------------------------------------------------------------------------------------------------------------------------------------------|
 | @Group  | 此处括号中的名称起到一个 namespace 的作用，为路由增加一个访问层级，如在 /home/hi 前增加 v1/home/hi，此处的 @Group 可以省略不写，路由会自动通过 controller 下的目录结构来生成路由地址，可以通过目录结构来添加 v1、v2            |
 | @Method | 此处括号中的名称用来规定此接口需要通过什么请求方式来进行访问（建议每个接口规定一种访问方式，不过此处支持多种访问方式用作一个接口请求），目前支持rest-ful中标准的四种访问类型 get、post、delete、put。（*@Method中大小写都支持 get、Get、gEt ...*） |
+| @Member | URL 中通配符的内容用于生成 xxx/xxx/:name，其中 :name 就是 @Member 中的内容，可以适配多个通配符 :name/sdf/:age/:uid                                                              |
 
 
 ###### 为什么 Index 接口并未输出为 v1/home/index 呢？

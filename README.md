@@ -4,7 +4,7 @@
 * 那么新的一种路由解决方案它来了，`gin_router` 是一个适用于 gin 框架的自动注册rest-ful风格的路由的插件。它省略了需要维护的路由文件，直接按照你的接口信息来生成接口对应的rest-ful路由，来供客户端进行调用。
 
 ### gin_router 的架构图（起名有点高调了 😁）
-
+正在画画中 ...
 
 ### gin_router 做了什么呢？ 给个🌰，先看看能否理解
 #### 安装
@@ -131,6 +131,9 @@ func (c *HomeController) MoreBMember(ctx *gin.Context) {
 | @Group  | 此处括号中的名称起到一个 namespace 的作用，为路由增加一个访问层级，如在 /home/hi 前增加 v1/home/hi，此处的 @Group 可以省略不写，路由会自动通过 controller 下的目录结构来生成路由地址，可以通过目录结构来添加 v1、v2            |
 | @Method | 此处括号中的名称用来规定此接口需要通过什么请求方式来进行访问（建议每个接口规定一种访问方式，不过此处支持多种访问方式用作一个接口请求），目前支持rest-ful中标准的四种访问类型 get、post、delete、put。（*@Method中大小写都支持 get、Get、gEt ...*） |
 | @Member | URL 中通配符的内容用于生成 xxx/xxx/:name，其中 :name 就是 @Member 中的内容，可以适配多个通配符 :name/sdf/:age/:uid                                                              |
+
+###### 其上调用 `gin_router.BindRoute(r)`  时需要注意的点。
+> 本插件有个不完善的地方，需要在调用 `BindRoute` 时，对你接口所在的 `package` 进行匿名引用。如上述例子中 `import _ "controller"` controller 就是我放置接口的地方。
 
 
 ###### 为什么 Index 接口并未输出为 v1/home/index 呢？

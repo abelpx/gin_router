@@ -68,17 +68,14 @@ func RegisterRoute(controller any) {
 	controllerName := v.Elem().Name()
 	// 获取 controller 路径
 	controllerPath := v.Elem().PkgPath()
-	// 获取项目名称
-	projectName := filepath.Dir(controllerPath)
 	// 不包含项目名称的路径
-	notProjectPath := strings.TrimPrefix(controllerPath, projectName+"/")
+	notProjectPath := strings.TrimPrefix(controllerPath, filepath.Dir(controllerPath)+"/")
 
-	goFilePath := strings.Join([]string{notProjectPath, ToSnakeCase(controllerName) + ".go"}, "/")
+	goFilePath := filepath.Join(notProjectPath, ToSnakeCase(controllerName)+".go")
 	// 将 MyController => my
 	controllerShortName := ToSnakeCase(strings.TrimSuffix(controllerName, ConfigInfo.OmitSuffix))
 	// controller 文件夹里面的路径
-	path := strings.Join([]string{notProjectPath, controllerShortName}, "/")
-
+	path := filepath.Join(notProjectPath, controllerShortName)
 	if ConfigInfo.ApiPath == "" {
 		path = strings.TrimPrefix(path, "controller")
 	} else {

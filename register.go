@@ -71,7 +71,7 @@ func RegisterRoute(controller any) {
 	// 不包含项目名称的路径
 	notProjectPath := strings.TrimPrefix(controllerPath, filepath.Dir(controllerPath)+"/")
 
-	goFilePath := filepath.Join(notProjectPath, ToSnakeCase(controllerName)+".go")
+	goFilePath := filepath.Join(ConfigInfo.ApiPath, notProjectPath, ToSnakeCase(controllerName)+".go")
 	// 将 MyController => my
 	controllerShortName := ToSnakeCase(strings.TrimSuffix(controllerName, ConfigInfo.OmitSuffix))
 	// controller 文件夹里面的路径

@@ -67,11 +67,22 @@ func RegisterRoute(controller any) {
 	// 获取 controller 名称
 	controllerName := v.Elem().Name()
 	// 获取 controller 路径
-	controllerPath := v.Elem().PkgPath()
-	// 不包含项目名称的路径
-	notProjectPath := strings.TrimPrefix(controllerPath, filepath.Dir(controllerPath)+"/")
+	controllerPath := ""
+	notProjectPath := ""
+	if ConfigInfo.ApiPath == "" {
+		controllerPath = v.Elem().PkgPath()
+		notProjectPath = strings.TrimPrefix(controllerPath, filepath.Dir(controllerPath)+"/")
+	} else {
+		controllerPath = ConfigInfo.ApiPath
+		notProjectPath = ""
+	}
 
-	goFilePath := filepath.Join(ConfigInfo.ApiPath, notProjectPath, ToSnakeCase(controllerName)+".go")
+	var goFilePath string
+	if ConfigInfo.ApiPath == "" {
+		goFilePath = filepath.Join(notProjectPath, ToSnakeCase(controllerName)+".go")
+	} else {
+		goFilePath = filepath.Join(ConfigInfo.ApiPath, ToSnakeCase(controllerName)+".go")
+	}
 	// 将 MyController => my
 	controllerShortName := ToSnakeCase(strings.TrimSuffix(controllerName, ConfigInfo.OmitSuffix))
 	// controller 文件夹里面的路径
@@ -153,7 +164,6 @@ func RegisterRoute(controller any) {
 			panic(fmt.Sprintf("Action %s not found in controller", action))
 		}
 
-		// fmt.Println("member --> ", member)
 		tmpRoute[path+member+actionName] = Route{
 			Method:      methods,
 			HandlerFunc: createHandlerFunc(handlerValue),
